@@ -1,17 +1,29 @@
-# habit_tracker_app
+# HabitFlow – Daily Habit Tracker
 
-A new Flutter project.
+## 📱 Project Description
 
-## Getting Started
+HabitFlow is a Flutter-based mobile application designed to help users build and maintain daily habits by tracking progress and receiving reminders.
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+* Add and manage daily habits
+* Track completion status
+* Save data locally
+* Motivational quotes (API)
+* Notification reminders
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 👥 Group Members
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* Yemisrach Habtamu  – 1056/15
+* Yordanos Sidelil  – 1079/15
+* Nuhamin Leul – 1766/15
+* Abdimuqtadir Mohamed – 5203/15
+* Beamlak Fekadu– 0194/15
+
+## 🎥 Demo Video
+
+
+
+## 📦 APK
+
+
