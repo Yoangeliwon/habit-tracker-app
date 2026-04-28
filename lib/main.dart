@@ -16,7 +16,7 @@ class HabitApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const  HomeScreen(),
+      home: const NavigationScreen(),
     );
   }
 }

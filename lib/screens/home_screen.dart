@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
     loadData();
   }
 
-  // 🔹 Load habits from storage
+  // 🔹 Load habits
   void loadData() async {
     List saved = await StorageService.loadHabits();
     setState(() {
@@ -45,11 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
     StorageService.saveHabits(habits);
   }
 
-  // 🔹 Navigate
+  // 🔹 Navigate to Add Screen
   void openAddHabitScreen() async {
     final newHabit = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddHabitScreen()),
+      MaterialPageRoute(builder: (context) => const AddHabitScreen()),
     );
 
     if (newHabit != null && newHabit is String) {
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 🔹 Calculate progress
+  // 🔹 Progress
   double getProgress() {
     if (habits.isEmpty) return 0;
     int completed = habits.where((h) => h["done"] == true).length;
@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 10),
 
-          // 🔹 LIST
+          // 🔹 HABIT LIST
           Expanded(
             child: habits.isEmpty
                 ? const Center(
@@ -138,34 +138,73 @@ class _HomeScreenState extends State<HomeScreen> {
                 : ListView.builder(
                     itemCount: habits.length,
                     itemBuilder: (context, index) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 6),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.shade300,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
-                            )
-                          ],
-                        ),
-                        child: ListTile(
-                          leading: Checkbox(
-                            value: habits[index]["done"],
-                            onChanged: (_) => toggleHabit(index),
+                      return Dismissible(
+                        key: Key(
+                            habits[index]["title"] + index.toString()),
+                        direction: DismissDirection.endToStart,
+
+                        // 🔥 DELETE ACTION
+                        onDismissed: (direction) {
+                          setState(() {
+                            habits.removeAt(index);
+                          });
+
+                          StorageService.saveHabits(habits);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Habit deleted"),
+                            ),
+                          );
+                        },
+
+                        // 🔴 RED BACKGROUND
+                        background: Container(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 6),
+                          padding: const EdgeInsets.only(right: 20),
+                          alignment: Alignment.centerRight,
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                          title: Text(
-                            habits[index]["title"],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              decoration: habits[index]["done"]
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
+                        ),
+
+                        // 🔹 MAIN CARD
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 6),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade300,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              )
+                            ],
+                          ),
+
+                          child: ListTile(
+                            leading: Checkbox(
+                              value: habits[index]["done"],
+                              onChanged: (_) => toggleHabit(index),
+                            ),
+                            title: Text(
+                              habits[index]["title"],
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                decoration: habits[index]["done"]
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                              ),
                             ),
                           ),
                         ),
@@ -176,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
+      // 🔹 ADD BUTTON
       floatingActionButton: FloatingActionButton(
         onPressed: openAddHabitScreen,
         child: const Icon(Icons.add),
