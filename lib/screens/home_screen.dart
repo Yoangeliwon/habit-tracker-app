@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'add_habit_screen.dart';
 import '../services/storage.dart';
+import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key}); // ✅ FIXED
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -11,19 +12,55 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> habits = [];
+  bool isLoading = true; // 🔥 loading state
 
   @override
   void initState() {
     super.initState();
     loadData();
+    fetchApiHabits(); // ✅ NOW USED → no unused import
   }
 
-  // 🔹 Load habits
+  // 🔹 Load habits from local storage
   void loadData() async {
     List saved = await StorageService.loadHabits();
     setState(() {
       habits = List<Map<String, dynamic>>.from(saved);
     });
+  }
+
+  // 🔥 Fetch from API
+  Future<void> fetchApiHabits() async {
+    try {
+      final users = await ApiService.fetchUsers();
+
+      List<Map<String, dynamic>> apiHabits = users.map((user) {
+        return {
+          "title": user["name"],
+          "done": false,
+        };
+      }).toList();
+
+      // ✅ Avoid duplicates
+      setState(() {
+        for (var habit in apiHabits) {
+          if (!habits.any((h) => h["title"] == habit["title"])) {
+            habits.add(habit);
+          }
+        }
+        isLoading = false;
+      });
+
+      StorageService.saveHabits(habits);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to load API data")),
+      );
+    }
   }
 
   // 🔹 Toggle habit
@@ -45,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
     StorageService.saveHabits(habits);
   }
 
-  // 🔹 Navigate to Add Screen
+  // 🔹 Navigate
   void openAddHabitScreen() async {
     final newHabit = await Navigator.push(
       context,
@@ -126,96 +163,96 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 10),
 
-          // 🔹 HABIT LIST
+          // 🔹 LIST / LOADING
           Expanded(
-            child: habits.isEmpty
-                ? const Center(
-                    child: Text(
-                      "No habits yet. Add one!",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: habits.length,
-                    itemBuilder: (context, index) {
-                      return Dismissible(
-                        key: Key(
-                            habits[index]["title"] + index.toString()),
-                        direction: DismissDirection.endToStart,
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator()) // 🔥 loading
+                : habits.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No habits yet. Add one!",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: habits.length,
+                        itemBuilder: (context, index) {
+                          return Dismissible(
+                            key: Key(
+                                habits[index]["title"] + index.toString()),
+                            direction: DismissDirection.endToStart,
 
-                        // 🔥 DELETE ACTION
-                        onDismissed: (direction) {
-                          setState(() {
-                            habits.removeAt(index);
-                          });
+                            // 🔥 DELETE
+                            onDismissed: (direction) {
+                              setState(() {
+                                habits.removeAt(index);
+                              });
 
-                          StorageService.saveHabits(habits);
+                              StorageService.saveHabits(habits);
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Habit deleted"),
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Habit deleted"),
+                                ),
+                              );
+                            },
+
+                            // 🔴 BACKGROUND
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 6),
+                              padding: const EdgeInsets.only(right: 20),
+                              alignment: Alignment.centerRight,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
+                            ),
+
+                            // 🔹 CARD
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 6),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade300,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 3),
+                                  )
+                                ],
+                              ),
+                              child: ListTile(
+                                leading: Checkbox(
+                                  value: habits[index]["done"],
+                                  onChanged: (_) => toggleHabit(index),
+                                ),
+                                title: Text(
+                                  habits[index]["title"],
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: habits[index]["done"]
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         },
-
-                        // 🔴 RED BACKGROUND
-                        background: Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 6),
-                          padding: const EdgeInsets.only(right: 20),
-                          alignment: Alignment.centerRight,
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: const Icon(
-                            Icons.delete,
-                            color: Colors.white,
-                          ),
-                        ),
-
-                        // 🔹 MAIN CARD
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 6),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.shade300,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              )
-                            ],
-                          ),
-
-                          child: ListTile(
-                            leading: Checkbox(
-                              value: habits[index]["done"],
-                              onChanged: (_) => toggleHabit(index),
-                            ),
-                            title: Text(
-                              habits[index]["title"],
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                decoration: habits[index]["done"]
-                                    ? TextDecoration.lineThrough
-                                    : TextDecoration.none,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                      ),
           ),
         ],
       ),
 
-      // 🔹 ADD BUTTON
       floatingActionButton: FloatingActionButton(
         onPressed: openAddHabitScreen,
         child: const Icon(Icons.add),
