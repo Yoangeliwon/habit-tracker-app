@@ -7,10 +7,10 @@ class StorageService {
   static Future<void> saveHabits(List<Map<String, dynamic>> habits) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final data = jsonEncode(habits);
-      await prefs.setString(_key, data);
+      final encodedData = jsonEncode(habits);
+      await prefs.setString(_key, encodedData);
     } catch (e) {
-      print("save error: $e");
+      // ignore error silently for now
     }
   }
 
@@ -21,11 +21,9 @@ class StorageService {
 
       if (data == null) return [];
 
-      final decoded = jsonDecode(data) as List;
-
+      final List decoded = jsonDecode(data);
       return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
     } catch (e) {
-      print("load error: $e");
       return [];
     }
   }
