@@ -1,113 +1,27 @@
 import 'package:flutter/material.dart';
-import 'add_habit_screen.dart';
-import '../services/storage.dart';
-import '../services/api_service.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  // Data and functions passed from MainNavigation
+  final List<Map<String, dynamic>> habits;
+  final bool isLoading;
+  final Function(int) onToggle;
+  final Function(int) onDelete;
+  final VoidCallback onRefresh;
 
-  @override
-  State<HomeScreen> createState() => HomeScreenState(); // Made public for navigation shell access
-}
-
-class HomeScreenState extends State<HomeScreen> {
-  List<Map<String, dynamic>> habits = [];
-  bool isLoading = true; // Topic 5: Loading state indicator
-
-  @override
-  void initState() {
-    super.initState();
-    loadData();
-    fetchApiHabits();
-  }
-
-  // 🔹 Topic 4: Load habits from local storage
-  void loadData() async {
-    List saved = await StorageService.loadHabits();
-    setState(() {
-      habits = List<Map<String, dynamic>>.from(saved);
-    });
-  }
-
-  // 🔹 Topic 5: Networking & API Integration
-  Future<void> fetchApiHabits() async {
-    try {
-      final users = await ApiService.fetchUsers();
-
-      // Topic 5: JSON parsing of fetched data
-      List<Map<String, dynamic>> apiHabits = users.map((user) {
-        return {
-          "title": "Check in with ${user["name"]}",
-          "done": false,
-          "location": "System API" // Placeholder for non-manual entries
-        };
-      }).toList();
-
-      setState(() {
-        for (var habit in apiHabits) {
-          // Avoid adding the same API data twice
-          if (!habits.any((h) => h["title"] == habit["title"])) {
-            habits.add(habit);
-          }
-        }
-        isLoading = false;
-      });
-
-      StorageService.saveHabits(habits);
-    } catch (e) {
-      setState(() => isLoading = false);
-      // Topic 2: Feedback component (SnackBar)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load community habits from API")),
-      );
-    }
-  }
-
-  // 🔹 Topic 3: State Management (Update)
-  void toggleHabit(int index) {
-    setState(() {
-      habits[index]["done"] = !habits[index]["done"];
-    });
-    StorageService.saveHabits(habits);
-  }
-
-  // 🔹 Topic 3: Receiving data from Add Screen
-  // Modified to handle Map (Name + Location)
-  void addHabit(Map<String, dynamic> habitData) {
-    setState(() {
-      habits.insert(0, {
-        "title": habitData["title"],
-        "location": habitData["location"], // Topic 6: Device feature integration
-        "done": false
-      });
-    });
-
-    StorageService.saveHabits(habits);
-  }
-
-  // 🔹 Topic 3: Navigation (Push/Pop)
-  void openAddHabitScreen() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddHabitScreen()),
-    );
-
-    // Topic 3: Handling data returned from another screen
-    if (result != null && result is Map<String, dynamic>) {
-      addHabit(result);
-    }
-  }
-
-  // Logic for the Progress Bar
-  double getProgress() {
-    if (habits.isEmpty) return 0;
-    int completed = habits.where((h) => h["done"] == true).length;
-    return completed / habits.length;
-  }
+  const HomeScreen({
+    super.key,
+    required this.habits,
+    required this.isLoading,
+    required this.onToggle,
+    required this.onDelete,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
-    double progress = getProgress();
+    // Logic for the Progress Bar (Topic 2 & 3)
+    int completedCount = habits.where((h) => h["done"] == true).length;
+    double progress = habits.isEmpty ? 0 : completedCount / habits.length;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -118,13 +32,13 @@ class HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: fetchApiHabits,
+            onPressed: onRefresh, // Topic 5: Manual API refresh
           )
         ],
       ),
       body: Column(
         children: [
-          // 🔹 HEADER (UI Design)
+          // 🔹 BEAUTIFUL HEADER (From your original UI)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -142,7 +56,11 @@ class HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 5),
                 const Text(
                   "Your Daily Progress",
-                  style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20, 
+                    color: Colors.white, 
+                    fontWeight: FontWeight.bold
+                  ),
                 ),
                 const SizedBox(height: 20),
                 LinearProgressIndicator(
@@ -151,14 +69,17 @@ class HomeScreenState extends State<HomeScreen> {
                   color: Colors.greenAccent,
                 ),
                 const SizedBox(height: 10),
-                Text("${(progress * 100).toInt()}% of habits completed", style: const TextStyle(color: Colors.white)),
+                Text(
+                  "${(progress * 100).toInt()}% of habits completed", 
+                  style: const TextStyle(color: Colors.white)
+                ),
               ],
             ),
           ),
 
           const SizedBox(height: 10),
 
-          // 🔹 LIST SECTION
+          // 🔹 HABIT LIST SECTION
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator()) // Topic 5: Loading indicator
@@ -171,10 +92,7 @@ class HomeScreenState extends State<HomeScreen> {
                           return Dismissible(
                             key: UniqueKey(),
                             direction: DismissDirection.endToStart,
-                            onDismissed: (_) {
-                              setState(() => habits.removeAt(index));
-                              StorageService.saveHabits(habits);
-                            },
+                            onDismissed: (_) => onDelete(index), // Topic 3: State Update
                             background: Container(
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 20),
@@ -183,20 +101,24 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                             child: Card(
                               margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15)
+                              ),
                               child: ListTile(
                                 leading: Checkbox(
                                   value: habit["done"],
-                                  onChanged: (_) => toggleHabit(index),
+                                  onChanged: (_) => onToggle(index), // Topic 3: Update State
                                 ),
                                 title: Text(
                                   habit["title"],
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    decoration: habit["done"] ? TextDecoration.lineThrough : null,
+                                    decoration: habit["done"] 
+                                        ? TextDecoration.lineThrough 
+                                        : null,
                                   ),
                                 ),
-                                // Topic 6: Integration of device feature data (Location)
+                                // Topic 6: Display device feature data (Location)
                                 subtitle: Text(
                                   habit["location"] ?? "No location tagged",
                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -208,11 +130,6 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
           ),
         ],
-      ),
-      // This button triggers the navigation requirement
-      floatingActionButton: FloatingActionButton(
-        onPressed: openAddHabitScreen,
-        child: const Icon(Icons.add),
       ),
     );
   }
