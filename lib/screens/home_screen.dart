@@ -253,10 +253,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: openAddHabitScreen,
-        child: const Icon(Icons.add),
-      ),
+      //floatingActionButton: FloatingActionButton(
+       // onPressed: openAddHabitScreen,
+        //child: const Icon(Icons.add),
+      //),
     );
   }
 }
