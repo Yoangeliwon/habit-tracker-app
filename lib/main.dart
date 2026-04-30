@@ -12,10 +12,13 @@ class HabitApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Habit Tracker',
+      title: 'HabitFlow Tracker',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorSchemeSeed: Colors.blue,
+        brightness: Brightness.light,
       ),
+      // Topic 3: Initial Navigation to the Main Navigation shell
       home: const MainNavigation(),
     );
   }
