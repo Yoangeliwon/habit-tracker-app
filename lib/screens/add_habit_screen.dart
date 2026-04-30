@@ -1,56 +1,4 @@
-
-          TextField(
-            controller: _habitController,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: "Habit Name",
-              hintText: "e.g., Drink Water",
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.edit),
-            ),
-          ),
-          const SizedBox(height: 15),
-          
-          // Topic 6: UI Integration for Device Feature
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ListTile(
-              leading: _isGettingLocation 
-                  ? const CircularProgressIndicator(strokeWidth: 2) 
-                  : const Icon(Icons.location_on, color: Colors.blue),
-              title: Text(
-                _locationStatus,
-                style: const TextStyle(fontSize: 14),
-              ),
-              subtitle: const Text("Tag current location"),
-              trailing: IconButton(
-                icon: const Icon(Icons.gps_fixed),
-                onPressed: _isGettingLocation ? null : _getLocation,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-
-          ElevatedButton(
-            onPressed: _saveHabit,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Save Habit", style: TextStyle(fontSize: 16)),
-          ),
-        ],
-      ),
-    );
-  }
-}
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart'; // Topic 6: Plugin Integration
 
 class AddHabitScreen extends StatefulWidget {
@@ -135,7 +83,6 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     });
   }
 
-  @override
   Widget build(BuildContext context) {
     // UI logic: Adjust padding for the keyboard when used as a BottomSheet
     return Padding(
