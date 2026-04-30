@@ -1,11 +1,15 @@
+
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart'; // Topic 6: Permissions
 import 'home_screen.dart';
 import 'add_habit_screen.dart';
 import '../services/storage.dart';
 import '../services/api_service.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final Function(bool) onThemeChanged; // Topic 3: State management callback
+  const MainNavigation({super.key, required this.onThemeChanged});
+
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
@@ -16,7 +20,7 @@ class _MainNavigationState extends State<MainNavigation> {
   bool isLoading = true;
 
   // Settings State
-  bool remindersEnabled = true;
+  bool remindersEnabled = false;
   bool isDarkMode = false;
 
   @override
@@ -25,6 +29,7 @@ class _MainNavigationState extends State<MainNavigation> {
     _loadAllData();
   }
 
+  // Topic 4: Data Persistence Initialization
   void _loadAllData() async {
     final saved = await StorageService.loadHabits();
     setState(() {
@@ -33,6 +38,7 @@ class _MainNavigationState extends State<MainNavigation> {
     _fetchApi();
   }
 
+  // Topic 5: Networking & API Integration
   void _fetchApi() async {
     try {
       final users = await ApiService.fetchUsers();
@@ -48,6 +54,27 @@ class _MainNavigationState extends State<MainNavigation> {
       StorageService.saveHabits(habits);
     } catch (e) {
       setState(() => isLoading = false);
+    }
+  }
+
+  // Topic 6: Handle Permission for Reminders
+  Future<void> _toggleReminders(bool value) async {
+    if (value) {
+      // Topic 6: Permission request and handling response
+      PermissionStatus status = await Permission.notification.request();
+      if (status.isGranted) {
+        setState(() => remindersEnabled = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Reminders Enabled Successfully"))
+        );
+      } else {
+        setState(() => remindersEnabled = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Notification Permission Denied"))
+        );
+      }
+    } else {
+      setState(() => remindersEnabled = false);
     }
   }
 
@@ -84,6 +111,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
+      // SCREEN 1: HOME
       HomeScreen(
         habits: habits,
         isLoading: isLoading,
@@ -91,16 +119,21 @@ class _MainNavigationState extends State<MainNavigation> {
         onDelete: _deleteHabit,
         onRefresh: _fetchApi,
       ),
-      StatsScreen(habits: habits), // Pass habits to Stats
+      // SCREEN 2: STATS
+      StatsScreen(habits: habits),
+      // SCREEN 3: SETTINGS
       SettingsScreen(
         reminders: remindersEnabled,
         darkMode: isDarkMode,
-        onReminderChanged: (v) => setState(() => remindersEnabled = v),
-        onDarkModeChanged: (v) => setState(() => isDarkMode = v),
+        onReminderChanged: _toggleReminders,
+        onDarkModeChanged: (bool value) {
+          setState(() => isDarkMode = value);
+          widget.onThemeChanged(value); // Updates main.dart theme
+        },
       ),
     ];
 
-    return Scaffold(
+return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -119,7 +152,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 }
 
-// --- FIXED STATS SCREEN (Topic 3: Structured Approach) ---
+// --- STATS SCREEN ---
 class StatsScreen extends StatelessWidget {
   final List<Map<String, dynamic>> habits;
   const StatsScreen({super.key, required this.habits});
@@ -135,7 +168,6 @@ class StatsScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Visual Pie Chart placeholder
             Stack(
               alignment: Alignment.center,
               children: [
@@ -151,11 +183,8 @@ class StatsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 30),
-            Text(
-              "You have completed ${percent.toInt()}% of your goals!",
-              style: const TextStyle(fontSize: 18),
-            ),
-            Text("$completed of $total habits done"),
+            Text("Completed ${percent.toInt()}% of habits!"),
+            Text("$completed done / $total total"),
           ],
         ),
       ),
@@ -163,7 +192,7 @@ class StatsScreen extends StatelessWidget {
   }
 }
 
-// --- FIXED SETTINGS SCREEN (Topic 2: Meaningful Interaction) ---
+// --- SETTINGS SCREEN ---
 class SettingsScreen extends StatelessWidget {
   final bool reminders;
   final bool darkMode;
@@ -184,12 +213,14 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text("Settings")),
       body: ListView(
         children: [
+          // Topic 2 & 6: Interaction and Permission handling
           SwitchListTile(
             title: const Text("Reminders"),
             secondary: const Icon(Icons.notifications),
             value: reminders,
             onChanged: onReminderChanged,
           ),
+          // Topic 2: Meaningful Interaction for Theme switching
           SwitchListTile(
             title: const Text("Dark Mode"),
             secondary: const Icon(Icons.dark_mode),
@@ -197,7 +228,7 @@ class SettingsScreen extends StatelessWidget {
             onChanged: onDarkModeChanged,
           ),
           const ListTile(
-            leading: Icon(Icons.info),
+            leading: Icon(Icons.info_outline),
             title: Text("App Version"),
             subtitle: Text("1.0.0"),
           ),
