@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart'; // Topic 6: Permissions
 import 'home_screen.dart';
@@ -60,7 +59,6 @@ class _MainNavigationState extends State<MainNavigation> {
   // Topic 6: Handle Permission for Reminders
   Future<void> _toggleReminders(bool value) async {
     if (value) {
-      // Topic 6: Permission request and handling response
       PermissionStatus status = await Permission.notification.request();
       if (status.isGranted) {
         setState(() => remindersEnabled = true);
@@ -78,10 +76,23 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
+
   void _addHabit(Map<String, dynamic> data) {
+    // 1. Get the current time automatically
+    final now = DateTime.now();
+    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final amPm = now.hour >= 12 ? "PM" : "AM";
+    final timeString = "$hour:${now.minute.toString().padLeft(2, '0')} $amPm";
+
     setState(() {
+      // 2. Add the time to the data map
+      data['time'] = timeString;
+
+      // 3. Add to the list
       habits.insert(0, data);
     });
+
+    // 4. Save to local storage (Topic 4)
     StorageService.saveHabits(habits);
   }
 
@@ -128,12 +139,12 @@ class _MainNavigationState extends State<MainNavigation> {
         onReminderChanged: _toggleReminders,
         onDarkModeChanged: (bool value) {
           setState(() => isDarkMode = value);
-          widget.onThemeChanged(value); // Updates main.dart theme
+          widget.onThemeChanged(value);
         },
       ),
     ];
 
-return Scaffold(
+    return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -162,6 +173,7 @@ class StatsScreen extends StatelessWidget {
     int total = habits.length;
     int completed = habits.where((h) => h["done"] == true).length;
     double percent = total == 0 ? 0 : (completed / total) * 100;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Statistics")),
       body: Center(
@@ -213,14 +225,12 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text("Settings")),
       body: ListView(
         children: [
-          // Topic 2 & 6: Interaction and Permission handling
           SwitchListTile(
             title: const Text("Reminders"),
             secondary: const Icon(Icons.notifications),
             value: reminders,
             onChanged: onReminderChanged,
           ),
-          // Topic 2: Meaningful Interaction for Theme switching
           SwitchListTile(
             title: const Text("Dark Mode"),
             secondary: const Icon(Icons.dark_mode),
