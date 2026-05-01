@@ -21,6 +21,9 @@ HabitFlow is a Flutter-based mobile application designed to help users build and
 * Beamlak Fekadu– 0194/15
 
 ## 🎥 Demo Video
+Due to an urgent situation, I recorded the presentation individually.
+Please find my Loom video presentation link below:
+[https://www.loom.com/share/3efc841d86c14cfb91519e70621a8796]-Yordanos sidelil
 
 
 
