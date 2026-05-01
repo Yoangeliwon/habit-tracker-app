@@ -120,9 +120,9 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 // Topic 6: Display device feature data (Location)
                                 subtitle: Text(
-                                  habit["location"] ?? "No location tagged",
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
+                                "${habit["time"] ?? "Just now"} • ${habit["location"] ?? "No location"}",
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
                               ),
                             ),
                           );
