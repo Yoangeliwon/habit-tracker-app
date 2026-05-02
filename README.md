@@ -25,7 +25,7 @@ Due to an urgent personal situation that i can't control, I recorded the present
 Please find my Loom video presentation link below:
 [https://www.loom.com/share/3efc841d86c14cfb91519e70621a8796] -Yordanos sidelil
 
-
+https://www.loom.com/share/7a5a5c7c4a4440bea6336fb4595aeb59
 
 
 
